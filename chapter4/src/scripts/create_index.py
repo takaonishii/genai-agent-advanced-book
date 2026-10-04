@@ -44,7 +44,9 @@ def load_csv_docs(data_dir_path: str) -> list[Document]:
 
     for path in csv_path:
         loader = CSVLoader(file_path=path)
-        docs.extend(loader.load())
+        load = loader.load()
+        print(f"Processing CSV file: {path}, load: {load}")
+        docs.extend(load)
 
     return docs
 
@@ -151,15 +153,19 @@ def add_documents_to_qdrant(
     client = OpenAI(api_key=settings.openai_api_key)
 
     for i, doc in enumerate(docs):
+        # print(f"Processing document {i}: {doc}")
+        # print(f"file name {i}: {doc.metadata['source']}")
         content = doc.page_content
         content = content.replace(" ", "")
         embedding = client.embeddings.create(
             model="text-embedding-3-small", input=content
         )
+        vector = embedding.data[0].embedding
+        # print(f"Processing document {i}: {content} -> {vector}")
         points.append(
             PointStruct(
                 id=i,
-                vector=embedding.data[0].embedding,
+                vector=vector,
                 payload={
                     "file_name": os.path.basename(doc.metadata["source"]),
                     "content": content,
